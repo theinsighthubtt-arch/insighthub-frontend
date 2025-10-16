@@ -30,15 +30,30 @@ export default function App() {
   const [booking, setBooking] = React.useState({ name: "", email: "", company: "", date: "", time: "", notes: "" });
   const [bookStatus, setBookStatus] = React.useState({ ok: null, msg: null });
 
-  function onBookSubmit(e) {
-    e.preventDefault();
-    if (!booking.name || !booking.email || !booking.date || !booking.time) {
-      setBookStatus({ ok: false, msg: "Please add your name, email, date and time." });
-      return;
-    }
-    setBookStatus({ ok: true, msg: "Booking request received. We’ll confirm shortly via email." });
-    setBooking({ name: "", email: "", company: "", date: "", time: "", notes: "" });
+  async function onBookSubmit(e) {
+  e.preventDefault();
+  if (!booking.name || !booking.email || !booking.date || !booking.time) {
+    setBookStatus({ ok: false, msg: "Please add your name, email, date and time." });
+    return;
   }
+  setBookStatus({ ok: null, msg: "Sending..." });
+
+  try {
+    const base = import.meta.env.VITE_API_URL || "http://localhost:4000";
+    const res = await fetch(`${base}/api/book`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(booking),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data?.error || "Failed to send");
+    setBookStatus({ ok: true, msg: "Booking request sent! We’ll confirm by email." });
+    setBooking({ name: "", email: "", company: "", date: "", time: "", notes: "" });
+  } catch (err) {
+    setBookStatus({ ok: false, msg: `Error: ${err.message}` });
+  }
+}
+
 
   return (
     <div className="min-h-screen bg-white text-slate-900 antialiased">
